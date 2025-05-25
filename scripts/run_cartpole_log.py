@@ -3,16 +3,36 @@ import json
 import csv
 import os
 from pathlib import Path
+import argparse
+from agents.rule_agent import SimpleRuleAgent, AngleOnlyAgent, PredictiveAngleAgent
 
-LOG_MODE = "json"  # ← "csv" にするとCSV出力
-log_path = Path(__file__).resolve().parent.parent / "logs" / "cartpole" / "log.json"
+# ===== 引数 =====
+parser = argparse.ArgumentParser()
+parser.add_argument("--rule", type=str, default="simple", help="使用するルールエージェント名")
+parser.add_argument("--logmode", type=str, default="json", choices=["json", "csv"], help="出力フォーマット")
+args = parser.parse_args()
 
+# ===== エージェントの切り替え =====
+if args.rule == "simple":
+    agent = SimpleRuleAgent()
+elif args.rule == "angle_only":
+    agent = AngleOnlyAgent()
+elif args.rule == "predictive":
+    agent = PredictiveAngleAgent()
+else:
+    raise ValueError(f"Unknown rule: {args.rule}")
+
+# ===== 環境とログ準備 =====
 env = gym.make("CartPole-v1")
 obs, _ = env.reset()
 log_data = []
 
+log_path = Path(__file__).resolve().parent.parent / "logs" / "cartpole" / f"{args.rule}_log.{args.logmode}"
+os.makedirs(log_path.parent, exist_ok=True)
+
+# ===== プレイ & ログ =====
 for step in range(500):
-    action = env.action_space.sample()
+    action = agent.select_action(obs)
     next_obs, reward, terminated, truncated, _ = env.step(action)
     done = terminated or truncated
 
@@ -28,25 +48,18 @@ for step in range(500):
     if done:
         obs, _ = env.reset()
 
-# --- 保存先ディレクトリ確認 ---
-os.makedirs("logs", exist_ok=True)
+env.close()
 
-# --- 書き出し ---
-if LOG_MODE == "json":
-    os.makedirs(log_path.parent, exist_ok=True)
+# ===== 保存 =====
+if args.logmode == "json":
     with open(log_path, "w") as f:
         json.dump(log_data, f, indent=2)
-    print("✅ Log saved to logs/cartpole_log.json")
+    print(f"✅ Log saved to {log_path}")
 
-elif LOG_MODE == "csv":
-    with open("../logs/cartpole_log.csv", "w", newline="") as f:
+elif args.logmode == "csv":
+    with open(log_path, "w", newline="") as f:
         writer = csv.writer(f)
         writer.writerow(["step", "obs0", "obs1", "obs2", "obs3", "action", "reward", "done"])
         for entry in log_data:
             writer.writerow([entry["step"], *entry["obs"], entry["action"], entry["reward"], entry["done"]])
-    print("✅ Log saved to logs/cartpole_log.csv")
-
-else:
-    print("❌ Unknown LOG_MODE:", LOG_MODE)
-
-env.close()
+    print(f"✅ Log saved to {log_path}")

@@ -1,3 +1,94 @@
+# LEARNED.md v0.2 — Rule-based Control Completion and Toward Q-Learning
+
+## 🧜‍♂️ 現在地：ルールベース制御の確立と可視化の完成
+
+CartPole 環境における人間操作・ランダムエージェント・複数のルールベースエージェントによる比較を通じて、
+強化学習以前の基礎的制御の検証と可視化が完了した。
+
+---
+
+## 📂 ディレクトリ構造と設計思想
+
+```plaintext
+rl-experiment/
+├── agents/                 # 各種エージェント（rule-based, Q-learning など）
+│   ├── base_agent.py
+│   ├── rule_agent.py
+│   └── q_learning_agent.py  # ※ 次フェーズで導入予定
+├── scripts/                # 実行スクリプト（ログ収集・可視化・学習）
+│   ├── run_cartpole_log.py
+│   ├── plot_cartpole_log.py
+│   └── train_cartpole_q.py  # ※ Q学習導入後に追加予定
+├── logs/                   # ログ保存先（cartpole 環境用）
+│   └── cartpole/
+│       ├── human_play_log.json
+│       ├── simple_log.json
+│       ├── angle_only_log.json
+│       └── predictive_log.json
+├── LEARNED.md              # 学習ログと進捗記録
+└── README.md               # プロジェクト概要
+```
+
+### 🌐 設計思想：拡張性と比較可能性の確保
+
+* **エージェントはクラス単位で独立**し、共通の `select_action(obs)` インターフェースを実装。
+* **スクリプトは処理単位（ログ出力・可視化・学習）で分離**し、目的ごとの簡易実行が可能。
+* **ログは agent 単位に命名保存**し、再現・比較・可視化が容易。
+* 今後 DQN や LunarLander 等に拡張しても構造が壊れず、**最低限の変更で多環境対応可能な設計**となっている。
+
+---
+
+## ✅ 実装・試行内容
+
+### 1. 🌎 Human Play Logging
+
+* Pygame を用いて左右キー操作でプレイ可能な CartPole UI を構築。
+* `logs/cartpole/human_play_log.json` に 500 ステップまでのプレイログを保存。
+* `plot_cartpole_log.py` の修正により任意のログファイルを可視化可能に。
+
+### 2. 🤷 Rule-based Agent の追加と比較
+
+* `AngleOnlyAgent`：obs\[2]（pole\_angle）の正負によって左右に操作。
+* `SimpleRuleAgent`（当初）：`AngleOnlyAgent` と同等の制御であったため、差別化は保留。
+* `PredictiveAngleAgent`：`angle + 0.5 * angle_velocity` に基づき予測的な制御を導入。
+
+### 3. 📊 可視化基盤の進化
+
+* `--log` 引数で任意のログファイルを指定可能に。
+* 存在しないログファイルを指定した場合は候補一覧を表示。
+* 累積報酬のプロットにより、各エージェントの成績を直感的に比較可能に。
+
+### 4. ✨ 成果
+
+* `PredictiveAngleAgent` によって CartPole を 500 ステップ維持（報酬満点）達成。
+* 観測グラフ上でも角度の揺れが安定して抑えられており、単純な予測モデルでも十分な効果を発揮することが示された。
+
+---
+
+## 🔄 次のステップ：Q-Learning の導入へ
+
+* 離散化による状態表現と Q テーブルによる価値更新の実装へ移行予定。
+* `BaseAgent` の設計が統一されているため、`QLearningAgent` の導入も自然に行える。
+* 将来的には DQN を含むニューラル制御型との比較基盤にも拡張可能。
+
+---
+
+## 🔍 学習ログと今後の観察点
+
+* 予測型ルールが環境に極めて強いことが判明 → Q 学習でこれを超えられるか？
+* 学習曲線・探索率・状態空間の分割方法などの設計が、今後の性能に大きく関与する見通し。
+* ルールベースの限界と、学習ベースの適応性との比較を焦点として観察を継続する。
+
+---
+
+（v0.2 完）
+
+
+</br>
+</br>
+</br>
+</br>
+</br>
 
 # LEARNED.md v0.1 — 強化学習入門：CartPole を題材にした可視化と分析
 
