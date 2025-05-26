@@ -6,28 +6,35 @@ from pathlib import Path
 from tqdm import trange
 
 # ==== ハイパーパラメータ ====
-NUM_EPISODES = 10000
+NUM_EPISODES = 5000
 MAX_STEPS = 500
 ENV_NAME = "CartPole-v1"
+
 INITIAL_EPSILON = 1.0
 MIN_EPSILON = 0.01
-DECAY_RATE = 0.0005   # ← 緩やかに減衰させる
+EPSILON_DECAY = 0.0005
+
+INITIAL_ALPHA = 0.5
+MIN_ALPHA = 0.01
+ALPHA_DECAY = 0.9995  # ← 小さいほど速く減衰
 
 OUTPUT_LOG = (
     Path(__file__).resolve().parent.parent
     / "logs"
     / "cartpole"
-    / "q_learning_training.json"
+    / "q_learning_tuned_alpha.json"
 )
 
 # ==== 環境とエージェント初期化 ====
 env = gym.make(ENV_NAME)
 agent = QLearningAgent(n_actions=env.action_space.n)
 agent.epsilon = INITIAL_EPSILON
+agent.alpha = INITIAL_ALPHA
 
 # ==== ログ用 ====
 episode_rewards = []
 epsilon_values = []
+alpha_values = []
 
 # ==== 学習ループ ====
 for episode in trange(NUM_EPISODES):
@@ -45,20 +52,22 @@ for episode in trange(NUM_EPISODES):
         if terminated or truncated:
             break
 
-    # ε減衰
-    #agent.epsilon = max(agent.epsilon * 0.995, 0.01)
-    agent.epsilon = MIN_EPSILON + (INITIAL_EPSILON - MIN_EPSILON) * np.exp(-DECAY_RATE * episode)
+    # ε・α 減衰
+    agent.epsilon = MIN_EPSILON + (INITIAL_EPSILON - MIN_EPSILON) * np.exp(-EPSILON_DECAY * episode)
+    agent.alpha = max(MIN_ALPHA, INITIAL_ALPHA * (ALPHA_DECAY ** episode))
 
     # ログ
     episode_rewards.append(total_reward)
     epsilon_values.append(agent.epsilon)
+    alpha_values.append(agent.alpha)
 
 # ==== ログ保存 ====
 OUTPUT_LOG.parent.mkdir(parents=True, exist_ok=True)
 with open(OUTPUT_LOG, "w") as f:
     json.dump({
         "rewards": episode_rewards,
-        "epsilons": epsilon_values
+        "epsilons": epsilon_values,
+        "alphas": alpha_values
     }, f, indent=2)
 
-print(f"✅ Training complete! Rewards and epsilons logged to: {OUTPUT_LOG}")
+print(f"✅ Training complete! Logged to: {OUTPUT_LOG}")
