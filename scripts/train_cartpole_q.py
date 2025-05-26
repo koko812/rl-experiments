@@ -4,6 +4,8 @@ import numpy as np
 import json
 from pathlib import Path
 from tqdm import trange
+import pickle
+
 
 # ==== ハイパーパラメータ ====
 NUM_EPISODES = 5000
@@ -60,6 +62,11 @@ for episode in trange(NUM_EPISODES):
     episode_rewards.append(total_reward)
     epsilon_values.append(agent.epsilon)
     alpha_values.append(agent.alpha)
+
+# 最後に Qテーブル保存
+with open("logs/cartpole/final_q_table.pkl", "wb") as f:
+    pickle.dump(agent.q_table, f)
+
 
 # ==== ログ保存 ====
 OUTPUT_LOG.parent.mkdir(parents=True, exist_ok=True)
