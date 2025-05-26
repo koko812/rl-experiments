@@ -50,7 +50,7 @@ agent.epsilon = MIN_EPSILON + (INITIAL_EPSILON - MIN_EPSILON) * np.exp(-DECAY_RA
 * 最大で500step に到達するエピソードも頻出
 * だしまだ reward のばらつきは大きく、完全安定とは言い難い
 
-![Q-Learning (After Tuning)](docs/figs/q_learning_tuned_epsilon.png)
+![Q-Learning (After Tuning)](docs/figs/q_learning_after_decay_tuned.png)
 
 ---
 
