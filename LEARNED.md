@@ -1,3 +1,91 @@
+# LEARNED.md v0.5 — ε調整による Q-Learning 安定化の試み
+
+## ⚙️ 今回の目的とアプローチ
+
+前回のv0.4までで、Q-Learning の基本実装と ε-decay による学習促進を確認した。
+今回は、**より安定的かつ高得点のエージェントを相手にすることを目指して**、以下のような調整を施した：
+
+* 学習エピソード数を 5000 → **10000** に増加
+* ε の減衰式を変更（指数関数型による滑らかな減衰）
+* ε の推移と報酬の関係を **2軸グラフで可視化**
+
+---
+
+## ↺ ε 減衰ロジックの変更
+
+前回までは以下のような「固定率で乗算」する形式を取っていた：
+
+```python
+agent.epsilon = max(agent.epsilon * 0.995, 0.01)
+```
+
+これに対して今回は、より滑らかな減衰を目指して指数関数型に変更した：
+
+```python
+agent.epsilon = MIN_EPSILON + (INITIAL_EPSILON - MIN_EPSILON) * np.exp(-DECAY_RATE * episode)
+```
+
+* `INITIAL_EPSILON = 1.0`
+* `MIN_EPSILON = 0.01`
+* `DECAY_RATE = 0.0005`
+
+この式により、探索（exploration）から活用（exploitation）への移行がより自然になった。
+
+---
+
+## 📈 学習曲線の比較
+
+### 🔹 Before Tuning (After ε Decay)
+
+* 探索が早く終わりすぎたため、局所最適に陷りやすかった
+* 後期の reward が不安定
+
+![Q-Learning (Before Tuning)](docs/figs/q_learning_after_decay.png)
+
+---
+
+### 🔸 After Tuning (Exponential ε Decay)
+
+* ε を滑らかに減衰させたことで、後半でも探索が残り、**報酬が安定して上昇**
+* 最大で500step に到達するエピソードも頻出
+* だしまだ reward のばらつきは大きく、完全安定とは言い難い
+
+![Q-Learning (After Tuning)](docs/figs/q_learning_tuned_epsilon.png)
+
+---
+
+## 💡 考察と次のステップ
+
+### ✅ 得られた知見
+
+* ε の調整は学習曲線に大きな影響を与える
+* 緩やかな減衰によって、過度な早期反復を防げる
+
+### 📌 今後の課題
+
+* 状態空間の離散化が Q-table の表現力を制限している
+* 報酬設計（reward shaping）や学習率 `alpha` の調整がさらなる改善につながる可能性
+* 現状の手法では安定して500step 維持とは言い難い
+
+---
+
+## 🚀 今後の展望
+
+* 報酬 shaping の導入（カートの中心への復元ボーナスなど）
+* `alpha` の decay 導入
+* 状態の離散化粒度の見直し
+* そして、最終的には **DQN（Deep Q-Network）** への移行を視野に入れる
+
+---
+
+（v0.5 完）
+
+</br>
+</br>
+</br>
+</br>
+</br>
+
 # LEARNED.md v0.4 — Q-Learning 初期実装と ε-decay の影響
 
 ## 🌟 現状まとめ
@@ -68,7 +156,7 @@ Q-Learning の基本実装を `QLearningAgent` として立ち上げ，それを
 
 ## 📊 Q-Learning の実験 (before ε-decay)
 
-![Q-Learning Training Curve (Before ε Decay)](figs/q_learning_before_decay.png)
+![Q-Learning Training Curve (Before ε Decay)](docs/figs/q_learning_before_decay.png)
 
 * 初期は弱いが一部ピークを見せる
 * 重要なのは：定数のエピソード後も成長が見られる為、ε=0.1 でも探索は保持されている
@@ -78,7 +166,7 @@ Q-Learning の基本実装を `QLearningAgent` として立ち上げ，それを
 
 ## 📊 ε-decay 導入後の実験 (after ε-decay)
 
-![Q-Learning Training Curve (After ε Decay)](figs/q_learning_after_decay.png)
+![Q-Learning Training Curve (After ε Decay)](docs/figs/q_learning_after_decay.png)
 
 * 第4000近辺で大きなブレイクスルー
 * その後は 500step に達しないものの，確実に 20 近くまで成長
